@@ -29,9 +29,9 @@ contract KartikCoinContract {
     return balances[_account];
   }
 
-  function txCoins(address _from, address _to, uint _amt) {
-    if ((balances[_from] >= _amt) && (_from == msg.sender)) {
-      balances[_from]-=_amt;
+  function txCoins(address _to, uint _amt) {
+    if ((balances[msg.sender] >= _amt)) {
+      balances[msg.sender]-=_amt;
       balances[_to]+= _amt;
       _txstatus("Transfer successful");
     }
