@@ -21,15 +21,25 @@ contract CarRentalContract {
   struct User{
     string Name;
     string ID_Number;
+    string Contact;
   }
 //Map every possible address to a user struct
   mapping(address => User) public Users;
+//Map every address to a balance
+  mapping(address => uint) Balances;
 //Dynamically sized array of Cars
   Car[] public cars;
 //Event to add a car
   event CarAdded(string regno);
 //Event to add a user
   event UserAdded(address user);
+// Event for creation of coins
+  event CoinsCreated(uint amt);
+//Event to transfer Coins
+  event CoinsTransferred(address from, address to, uint amt);
+//Event to edit a car
+  event CarDeleted(string regno);
+
 //Constructor to save the creator at the start of the contarct
   function CarRentalContract() {
     Creator=msg.sender;
@@ -39,6 +49,7 @@ contract CarRentalContract {
     if (msg.sender!=Creator) revert();
     _;
   }
+
 //Function to add a car to the catalogue
   function AddCar(
     int id,
@@ -50,6 +61,13 @@ contract CarRentalContract {
   )
     IfCreator
   {
+    if (cars.length != 0) {
+      for (uint256 i=0;i<cars.length;i++){
+        if (StringUtils.equal(cars[i].RegNo,regno)) {
+          revert();
+        }
+      }
+    }
     Car memory vehicle;
     vehicle.ID=id;
     vehicle.Make=make;
@@ -66,12 +84,14 @@ contract CarRentalContract {
   function AddUser(
     address ad,
     string name,
-    string id_number
+    string id_number,
+    string contact
   )
     IfCreator
   {
     Users[ad].Name=name;
     Users[ad].ID_Number=id_number;
+    Users[ad].Contact=contact;
   }
 //Function to get back a cars model, regno and
   function GetCar(string regno)
@@ -105,13 +125,34 @@ contract CarRentalContract {
       revert();
     }
   }
-//Function to get a user
-  function GetUser(address ad)
-  constant
-  returns (string, string) {
+//Function to get a user, owner can check all users
+//A user can check only his own details
+  function GetUser(address ad) constant returns
+  (
+    string,
+    string,
+    string
+  )
+  {
     if ((ad == Creator) || (ad == msg.sender)) {
-      return (Users[ad].Name, Users[ad].ID_Number);
+      return (Users[ad].Name, Users[ad].ID_Number, Users[ad].Contact);
     }
+  }
+//Delete a car by its registration number
+  function DeleteCar(string regno) IfCreator {
+    for (uint256 i=0; i<cars.length; i++)
+    {
+      if (StringUtils.equal(cars[i].RegNo,regno)){
+        delete cars[i];
+        cars[i]=cars[cars.length - 1];
+        cars.length -= 1;
+        CarDeleted(regno);
+      }
+    }
+  }
+//Function to rent out a car
+  function RentOutCar(address to_user, string car_regno){
+
   }
 
 }
