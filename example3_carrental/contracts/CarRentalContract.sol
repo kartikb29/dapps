@@ -1,4 +1,6 @@
-pragma solidity ^0.4.4;
+pragma solidity ^0.4.13;
+//Import the string utils library
+import "./stringUtils.sol";
 
 contract CarRentalContract {
 
@@ -44,11 +46,11 @@ contract CarRentalContract {
     string model,
     string regno,
     string color,
-    int milecount,
+    int milecount
   )
     IfCreator
   {
-    Car vehicle;
+    Car memory vehicle;
     vehicle.ID=id;
     vehicle.Make=make;
     vehicle.Model=model;
@@ -75,14 +77,40 @@ contract CarRentalContract {
   function GetCar(string regno)
     IfCreator
     constant
-    returns()
+    returns
+  (
+    string,
+    string,
+    string,
+    string,
+    int,
+    address,
+    bool
+  )
   {
-    Car vehicle;
-    for (int i=0; i<cars.length; i++)
+    for (uint256 i=0; i<cars.length; i++)
     {
-      vehicle=cars[i];
-      if (vehicle.RegNo==regno) return car1;
-      revert("Car does not exist");
+      if (StringUtils.equal(cars[i].RegNo,regno)){
+        return
+      (
+        cars[i].Make,
+        cars[i].Model,
+        cars[i].RegNo,
+        cars[i].Color,
+        cars[i].MileCount,
+        cars[i].CurrentOwner,
+        cars[i].Available
+      );
+      }
+      revert();
+    }
+  }
+//Function to get a user
+  function GetUser(address ad)
+  constant
+  returns (string, string) {
+    if ((ad == Creator) || (ad == msg.sender)) {
+      return (Users[ad].Name, Users[ad].ID_Number);
     }
   }
 
