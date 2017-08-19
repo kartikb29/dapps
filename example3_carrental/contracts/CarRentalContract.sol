@@ -5,7 +5,7 @@ import "./stringUtils.sol";
 contract CarRentalContract {
 
 //Public address variable of creator
-  address public Creator;
+  address Creator;
 //New complex type car describing a car
   struct Car {
     int ID;
@@ -17,6 +17,12 @@ contract CarRentalContract {
     address CurrentOwner;
     bool Available;
   }
+//New complex type for a rent proposal
+  struct Proposal{
+    string CarRegNo;
+    uint Deposit;
+    bool Approve;
+  }
 //New complex type user
   struct User{
     string Name;
@@ -24,11 +30,13 @@ contract CarRentalContract {
     string Contact;
   }
 //Map every possible address to a user struct
-  mapping(address => User) public Users;
+  mapping(address => User) Users;
 //Map every address to a balance
   mapping(address => uint) Balances;
+//Map every user to a proposal
+  mapping(address => Proposal) _proposal;
 //Dynamically sized array of Cars
-  Car[] public cars;
+  Car[] cars;
 //Event to add a car
   event CarAdded(string regno);
 //Event to add a user
@@ -39,6 +47,8 @@ contract CarRentalContract {
   event CoinsTransferred(address from, address to, uint amt);
 //Event to edit a car
   event CarDeleted(string regno);
+//Event to propse a renatl
+  event RentalProposed(address user, string regno, uint deposit);
 
 //Constructor to save the creator at the start of the contarct
   function CarRentalContract() {
@@ -49,6 +59,8 @@ contract CarRentalContract {
     if (msg.sender!=Creator) revert();
     _;
   }
+//Payable function to store ether
+  function Fallback() payable {}
 
 //Function to add a car to the catalogue
   function AddCar(
@@ -92,6 +104,7 @@ contract CarRentalContract {
     Users[ad].Name=name;
     Users[ad].ID_Number=id_number;
     Users[ad].Contact=contact;
+    UserAdded(ad);
   }
 //Function to get back a cars model, regno and
   function GetCar(string regno)
@@ -134,9 +147,8 @@ contract CarRentalContract {
     string
   )
   {
-    if ((ad == Creator) || (ad == msg.sender)) {
-      return (Users[ad].Name, Users[ad].ID_Number, Users[ad].Contact);
-    }
+    require((msg.sender==ad) || (msg.sender==Creator));
+    return (Users[ad].Name, Users[ad].ID_Number, Users[ad].Contact);
   }
 //Delete a car by its registration number
   function DeleteCar(string regno) IfCreator {
@@ -150,9 +162,32 @@ contract CarRentalContract {
       }
     }
   }
-//Function to rent out a car
-  function RentOutCar(address to_user, string car_regno){
 
+//Function to propose a rental
+  function ProposeRental(address to_user, string car_regno, uint deposit_amt)
+  IfCreator
+  {
+    _proposal[to_user].CarRegNo=car_regno;
+    _proposal[to_user].Deposit=deposit_amt;
+    _proposal[to_user].Approve=false;
+    RentalProposed(to_user, car_regno, deposit_amt);
   }
+//Function to get rental proposal for a user
+  function GetProposal(address user_ad) constant returns
+  (
+    string,
+    uint,
+    bool
+  )
+  {
+    require((msg.sender==user_ad) || (msg.sender==Creator));
+    return
+    (
+      _proposal[user_ad].CarRegNo,
+      _proposal[user_ad].Deposit,
+      _proposal[user_ad].Approve
+    );
+  }
+//Function to approve a proposal
 
 }
