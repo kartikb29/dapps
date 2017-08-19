@@ -35,6 +35,8 @@ contract CarRentalContract {
   mapping(address => uint) Balances;
 //Map every user to a proposal
   mapping(address => Proposal) _proposal;
+//Mapping a deposit account for each address
+  mapping(address => uint) Deposits;
 //Dynamically sized array of Cars
   Car[] cars;
 //Event to add a car
@@ -48,8 +50,9 @@ contract CarRentalContract {
 //Event to edit a car
   event CarDeleted(string regno);
 //Event to propse a renatl
-  event RentalProposed(address user, string regno, uint deposit);
-
+  event RentalProposed(address user_ad, string regno, uint deposit);
+//Event to approve a proposal
+  event ProposalApproved(address user_ad,string regno, uint deposit);
 //Constructor to save the creator at the start of the contarct
   function CarRentalContract() {
     Creator=msg.sender;
@@ -61,7 +64,28 @@ contract CarRentalContract {
   }
 //Payable function to store ether
   function Fallback() payable {}
-
+//Create cryptocurrency
+  function MintCoins(uint amt) IfCreator {
+    Balances[Creator]+=amt;
+    CoinsCreated(amt);
+  }
+//Transfer coins
+  function TransferCoins(address from, address to, uint amt){
+    require(msg.sender==from);
+    Balances[from]-=amt;
+    Balances[to]+=amt;
+    CoinsTransferred(from,to,amt);
+  }
+//Function to get balance
+  function GetBalance(address user_ad) constant returns(uint){
+    require(msg.sender==user_ad);
+    return (Balances[user_ad]);
+  }
+//Function to get deposit of a user
+  function GetDeposit(address user_ad) constant returns(uint){
+    require(msg.sender==user_ad);
+    return (Deposits[user_ad]);
+  }
 //Function to add a car to the catalogue
   function AddCar(
     int id,
@@ -106,7 +130,7 @@ contract CarRentalContract {
     Users[ad].Contact=contact;
     UserAdded(ad);
   }
-//Function to get back a cars model, regno and
+//Function to get back a car using regno
   function GetCar(string regno)
     IfCreator
     constant
@@ -121,6 +145,7 @@ contract CarRentalContract {
     bool
   )
   {
+    require(cars.length!=0);
     for (uint256 i=0; i<cars.length; i++)
     {
       if (StringUtils.equal(cars[i].RegNo,regno)){
@@ -159,18 +184,28 @@ contract CarRentalContract {
         cars[i]=cars[cars.length - 1];
         cars.length -= 1;
         CarDeleted(regno);
+        return;
       }
     }
+    revert();
   }
 
 //Function to propose a rental
   function ProposeRental(address to_user, string car_regno, uint deposit_amt)
   IfCreator
   {
-    _proposal[to_user].CarRegNo=car_regno;
-    _proposal[to_user].Deposit=deposit_amt;
-    _proposal[to_user].Approve=false;
-    RentalProposed(to_user, car_regno, deposit_amt);
+    require(cars.length!=0);
+    for (uint256 i=0; i<cars.length; i++)
+    {
+      if (StringUtils.equal(cars[i].RegNo,car_regno) && cars[i].Available==true){
+        _proposal[to_user].CarRegNo=car_regno;
+        _proposal[to_user].Deposit=deposit_amt;
+        _proposal[to_user].Approve=false;
+        RentalProposed(to_user, car_regno, deposit_amt);
+        return;
+      }
+    }
+    revert();
   }
 //Function to get rental proposal for a user
   function GetProposal(address user_ad) constant returns
@@ -189,5 +224,22 @@ contract CarRentalContract {
     );
   }
 //Function to approve a proposal
+  function ApproveProposal(address user_ad) {
+    require(user_ad==msg.sender);
+    require(Balances[user_ad] >=_proposal[user_ad].Deposit);
+    _proposal[user_ad].Approve = true;
+    Balances[user_ad]-=_proposal[user_ad].Deposit;
+    Deposits[user_ad]+=_proposal[user_ad].Deposit;
+    ProposalApproved
+    (
+        user_ad,
+        _proposal[user_ad].CarRegNo,
+        _proposal[user_ad].Deposit
+    );
+  }
+//Function to rent out car after approvals
+  function ApproveRental(address user_ad, ){
+
+  }
 
 }
