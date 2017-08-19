@@ -238,7 +238,7 @@ contract CarRentalContract {
     );
   }
 //Function to rent out car after approvals
-  function ApproveRental(address user_ad, ){
+  function ApproveRental(address user_ad){
 
   }
 
