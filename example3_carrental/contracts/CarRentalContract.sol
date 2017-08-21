@@ -6,8 +6,6 @@ contract CarRentalContract {
 
 //Public address variable of creator
   address Creator;
-//Rent
-uint Rent=100;
 //New complex type car describing a car
   struct Car {
     int ID;
@@ -23,6 +21,7 @@ uint Rent=100;
   struct Proposal{
     string CarRegNo;
     uint Deposit;
+    uint Rent;
     bool Approve;
     bool Check;
   }
@@ -196,7 +195,13 @@ uint Rent=100;
   }
 
 //Function to propose a rental
-  function ProposeRental(address to_user, string car_regno, uint deposit_amt)
+  function ProposeRental
+  (
+    address to_user,
+    string car_regno,
+    uint deposit_amt,
+    uint rent_amt
+  )
   IfCreator
   {
     require(cars.length!=0);
@@ -205,6 +210,7 @@ uint Rent=100;
       if (StringUtils.equal(cars[i].RegNo,car_regno) && cars[i].Available==true){
         _proposal[to_user].CarRegNo=car_regno;
         _proposal[to_user].Deposit=deposit_amt;
+        _proposal[to_user].Rent=rent_amt;
         _proposal[to_user].Approve=false;
         _proposal[to_user].Check=true;
         RentalProposed(to_user, car_regno, deposit_amt);
@@ -218,6 +224,7 @@ uint Rent=100;
   (
     string,
     uint,
+    uint,
     bool
   )
   {
@@ -226,6 +233,7 @@ uint Rent=100;
     (
       _proposal[user_ad].CarRegNo,
       _proposal[user_ad].Deposit,
+      _proposal[user_ad].Rent,
       _proposal[user_ad].Approve
     );
   }
@@ -244,7 +252,7 @@ uint Rent=100;
         _proposal[user_ad].Deposit
     );
   }
-//Function (internal) to chnage ownership of car
+//Function (internal) to change ownership of car
   function ChangeOwnership(address user_ad, string car_regno) internal {
     require(cars.length!=0);
     for (uint256 i=0; i<cars.length; i++)
@@ -261,7 +269,7 @@ uint Rent=100;
     require(_proposal[user_ad].Check==true);
     uint amt = Deposits[user_ad];
     Deposits[user_ad]-=amt;
-    Balances[user_ad]+=(amt-Rent);
+    Balances[user_ad]+=(amt-_proposal[user_ad].Rent);
     _proposal[user_ad].Check=false;
     CarReturned(user_ad, regno, Balances[user_ad]);
   }
