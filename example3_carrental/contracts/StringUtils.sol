@@ -1,3 +1,5 @@
+pragma solidity ^0.4.13;
+
 library StringUtils {
     /// @dev Does a byte-by-byte lexicographical comparison of two strings.
     /// @return a negative number if `_a` is smaller, zero if they are equal
@@ -29,10 +31,10 @@ library StringUtils {
     {
     	bytes memory h = bytes(_haystack);
     	bytes memory n = bytes(_needle);
-    	if(h.length < 1 || n.length < 1 || (n.length > h.length)) 
+    	if(h.length < 1 || n.length < 1 || (n.length > h.length))
     		return -1;
     	else if(h.length > (2**128 -1)) // since we have to be able to return -1 (if the char isn't found or input error), this function must return an "int" type with a max length of (2^128 - 1)
-    		return -1;									
+    		return -1;
     	else
     	{
     		uint subindex = 0;
@@ -44,13 +46,12 @@ library StringUtils {
     				while(subindex < n.length && (i + subindex) < h.length && h[i + subindex] == n[subindex]) // search until the chars don't match or until we reach the end of a or b
     				{
     					subindex++;
-    				}	
+    				}
     				if(subindex == n.length)
     					return int(i);
     			}
     		}
     		return -1;
-    	}	
+    	}
     }
 }
-

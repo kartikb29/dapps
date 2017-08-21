@@ -1,11 +1,13 @@
 pragma solidity ^0.4.13;
 //Import the string utils library
-import "./stringUtils.sol";
+import "./StringUtils.sol";
 
 contract CarRentalContract {
 
 //Public address variable of creator
   address Creator;
+//Rent
+uint Rent=100;
 //New complex type car describing a car
   struct Car {
     int ID;
@@ -22,6 +24,7 @@ contract CarRentalContract {
     string CarRegNo;
     uint Deposit;
     bool Approve;
+    bool Check;
   }
 //New complex type user
   struct User{
@@ -53,6 +56,8 @@ contract CarRentalContract {
   event RentalProposed(address user_ad, string regno, uint deposit);
 //Event to approve a proposal
   event ProposalApproved(address user_ad,string regno, uint deposit);
+//Event to return car
+  event CarReturned(address user_ad, string regno, uint balance);
 //Constructor to save the creator at the start of the contarct
   function CarRentalContract() {
     Creator=msg.sender;
@@ -201,6 +206,7 @@ contract CarRentalContract {
         _proposal[to_user].CarRegNo=car_regno;
         _proposal[to_user].Deposit=deposit_amt;
         _proposal[to_user].Approve=false;
+        _proposal[to_user].Check=true;
         RentalProposed(to_user, car_regno, deposit_amt);
         return;
       }
@@ -227,19 +233,37 @@ contract CarRentalContract {
   function ApproveProposal(address user_ad) {
     require(user_ad==msg.sender);
     require(Balances[user_ad] >=_proposal[user_ad].Deposit);
+    require(_proposal[user_ad].Check==true);
     _proposal[user_ad].Approve = true;
     Balances[user_ad]-=_proposal[user_ad].Deposit;
     Deposits[user_ad]+=_proposal[user_ad].Deposit;
-    ProposalApproved
-    (
+    ChangeOwnership(user_ad, _proposal[user_ad].CarRegNo);
+    ProposalApproved(
         user_ad,
         _proposal[user_ad].CarRegNo,
         _proposal[user_ad].Deposit
     );
   }
-//Function to rent out car after approvals
-  function ApproveRental(address user_ad){
-
+//Function (internal) to chnage ownership of car
+  function ChangeOwnership(address user_ad, string car_regno) internal {
+    require(cars.length!=0);
+    for (uint256 i=0; i<cars.length; i++)
+    {
+      if (StringUtils.equal(cars[i].RegNo,car_regno) && cars[i].Available==true){
+        cars[i].CurrentOwner = user_ad;
+        return;
+      }
+    }
+  }
+//Function to return a car
+  function ReturnCar(address user_ad, string regno){
+    require(msg.sender == user_ad);
+    require(_proposal[user_ad].Check==true);
+    uint amt = Deposits[user_ad];
+    Deposits[user_ad]-=amt;
+    Balances[user_ad]+=(amt-Rent);
+    _proposal[user_ad].Check=false;
+    CarReturned(user_ad, regno, Balances[user_ad]);
   }
 
 }
