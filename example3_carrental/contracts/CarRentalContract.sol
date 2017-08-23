@@ -57,6 +57,8 @@ contract CarRentalContract {
   event ProposalApproved(address user_ad,string regno, uint deposit);
 //Event to return car
   event CarReturned(address user_ad, string regno, uint balance);
+//Event to change pwnership
+  event OwnershipChanged(address user, string regno);
 //Constructor to save the creator at the start of the contarct
   function CarRentalContract() {
     Creator=msg.sender;
@@ -242,6 +244,7 @@ contract CarRentalContract {
     require(user_ad==msg.sender);
     require(Balances[user_ad] >=_proposal[user_ad].Deposit);
     require(_proposal[user_ad].Check==true);
+    require(_proposal[user_ad].Approve==false);
     _proposal[user_ad].Approve = true;
     Balances[user_ad]-=_proposal[user_ad].Deposit;
     Deposits[user_ad]+=_proposal[user_ad].Deposit;
@@ -259,6 +262,14 @@ contract CarRentalContract {
     {
       if (StringUtils.equal(cars[i].RegNo,car_regno) && cars[i].Available==true){
         cars[i].CurrentOwner = user_ad;
+        cars[i].Available=false;
+        OwnershipChanged(user_ad,car_regno);
+        return;
+      }
+      else if (StringUtils.equal(cars[i].RegNo,car_regno) && cars[i].Available==false){
+        cars[i].CurrentOwner = Creator;
+        cars[i].Available=true;
+        OwnershipChanged(Creator,car_regno);
         return;
       }
     }
@@ -267,10 +278,12 @@ contract CarRentalContract {
   function ReturnCar(address user_ad, string regno){
     require(msg.sender == user_ad);
     require(_proposal[user_ad].Check==true);
+    require(_proposal[user_ad].Approve==true);
     uint amt = Deposits[user_ad];
     Deposits[user_ad]-=amt;
     Balances[user_ad]+=(amt-_proposal[user_ad].Rent);
     _proposal[user_ad].Check=false;
+    ChangeOwnership(Creator, regno);
     CarReturned(user_ad, regno, Balances[user_ad]);
   }
 
